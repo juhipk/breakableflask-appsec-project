@@ -1,0 +1,49 @@
+name: Trivy Security Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Install Trivy
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          output: 'trivy-sca-report.txt'
+          severity: 'CRITICAL,HIGH'
+
+      # Build Docker Image
+      - name: Build Docker image
+        run: |
+          docker build -t flaskapp:latest .
+
+      # Scan Docker Image
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'flaskapp:latest'
+          format: 'table'
+          output: 'trivy-image-report.txt'
+          severity: 'CRITICAL,HIGH'
+
+      # Upload results to GitHub
+      - name: Upload Trivy Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-reports
+          path: |
+            trivy-sca-report.txt
+            trivy-image-report.txt
