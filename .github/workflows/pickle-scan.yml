@@ -1,0 +1,28 @@
+name: AI Model / Pickle Security Scan
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+jobs:
+  detect-pickle:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Search for dangerous pickle usage
+      run: |
+        echo "Scanning for unsafe pickle.load usage..."
+        if grep -R "pickle.load" -n . ; then
+          echo "::warning title=Unsafe pickle usage detected::Review pickle deserialization."
+        else
+          echo "No unsafe pickle usage found."
+        fi
+
+    - name: Detect model artifacts
+      run: |
+        echo "Checking for AI model files (.pkl, .joblib, .pt)..."
+        find . -type f \( -name "*.pkl" -o -name "*.joblib" -o -name "*.pt" -o -name "*.pickle" \)
