@@ -1,0 +1,28 @@
+name: Binary Artifact SCA
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+jobs:
+  scan-artifacts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Python distribution
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip setuptools wheel
+        python setup.py sdist bdist_wheel || true
+
+    - name: Scan built artifacts with Trivy
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: './dist'
+        severity: 'CRITICAL,HIGH'
